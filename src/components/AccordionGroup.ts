@@ -66,20 +66,11 @@ class AccordionGroup {
     // Set default properties
     // ===========
     this.root = root;
-    this.id = `${this.options.prefix}-${AccordionGroup.count}`;
+    this.id = `${this.options.prefix!}-${AccordionGroup.count}`;
     this.accordions = accordions;
-    // this.accordions = accordions.map((accordion, i): Accordion => {
-    //   if (typeof accordion.id === 'string') {
-    //     return accordion;
-    //   }
-    //   return {
-    //     ...accordion,
-    //     id: `${this.id}__`
-    //   };
-    // });
     this.state = {
       isAnimating: false,
-      activePanels: this.options.defaultOpen,
+      activePanels: this.options.defaultOpen!,
     };
 
     this.initView();
@@ -93,13 +84,11 @@ class AccordionGroup {
         'aria-expanded',
         activePanels.includes(i).toString()
       );
-      console.log('setting');
     }
   }
 
   private setActivePanels(panelIndex: number) {
     const { preventAllCollapsed, multipleExpanded } = this.options;
-    const isRepeat = this.state.activePanels.includes(panelIndex);
 
     // If id is part of activePanels...
     if (this.state.activePanels.includes(panelIndex)) {
@@ -185,7 +174,7 @@ class AccordionGroup {
           .join(' ');
         header.innerHTML = `<button ${headerAttrString}>${item.header}</button>`;
 
-        header.firstElementChild?.addEventListener('click', this.handleClick);
+        header.firstElementChild.addEventListener('click', this.handleClick);
 
         // ======
         // Create Panel element
