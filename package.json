@@ -1,7 +1,18 @@
 {
-  "name": "vite-typescript-starter",
+  "name": "accordion-demo-npm-test",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
+  "files": [
+    "dist"
+  ],
+  "main": "./dist/accordion.umd.js",
+  "module": "./dist/accordion.es.js",
+  "exports": {
+    ".": {
+      "import": "./dist/accordion.es.js",
+      "require": "./dist/accordion.umd.js"
+    }
+  },
   "scripts": {
     "dev": "vite",
     "start": "vite",
@@ -13,14 +24,18 @@
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.28.0",
     "@typescript-eslint/parser": "^5.28.0",
+    "autoprefixer": "^10.4.7",
     "eslint": "^8.18.0",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-prettier": "^4.0.0",
+    "postcss": "^8.4.14",
+    "postcss-scss": "^4.0.4",
     "prettier": "^2.7.1",
+    "sass": "^1.53.0",
     "typescript": "^4.5.4",
     "vite": "^2.9.9"
   },
   "dependencies": {
-    "liquidjs": "^9.37.0"
+    "accordion": "^3.0.2"
   }
 }

@@ -16,7 +16,8 @@ module.exports = {
   ],
   rules: {
     'eqeqeq': 'error',
-    '@typescript-eslint/unbound-method': 'warning',
+    '@typescript-eslint/unbound-method': 'off',
+    'comma-dangle': 'off',
     'prettier/prettier': [
       'error',
       {

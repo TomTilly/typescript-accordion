@@ -22,4 +22,6 @@ if (!accordionGroupRoot) throw new Error('Cannot find accordion root element');
 if (!accordionGroupRoot2) throw new Error('Cannot find accordion root element');
 
 new AccordionGroup(accordionGroupRoot, accordions);
-new AccordionGroup(accordionGroupRoot2, accordions, { multipleExpanded: true });
+new AccordionGroup(accordionGroupRoot2, accordions, {
+  multipleExpanded: true,
+});

@@ -1,3 +1,5 @@
+import './AccordionGroup.scss';
+
 interface Accordion {
   header: string;
   panel: string;
@@ -9,11 +11,11 @@ interface AccordionGroupState {
 }
 
 interface AccordionGroupOptions {
-  multipleExpanded?: boolean;
-  preventAllCollapsed?: boolean;
-  prefix?: string;
-  headingLevel?: 1 | 2 | 3 | 4 | 5 | 6;
-  defaultOpen?: number[];
+  multipleExpanded: boolean;
+  preventAllCollapsed: boolean;
+  prefix: string;
+  headingLevel: 1 | 2 | 3 | 4 | 5 | 6;
+  defaultOpen: number[];
 }
 
 interface Attribute {
@@ -38,7 +40,7 @@ class AccordionGroup {
   constructor(
     root: HTMLElement,
     accordions: Accordion[],
-    options?: AccordionGroupOptions
+    options?: Partial<AccordionGroupOptions>
   ) {
     // ===========
     // Set options
@@ -66,17 +68,17 @@ class AccordionGroup {
     // Set default properties
     // ===========
     this.root = root;
-    this.id = `${this.options.prefix!}-${AccordionGroup.count}`;
+    this.id = `${this.options.prefix}-${AccordionGroup.count}`;
     this.accordions = accordions;
     this.state = {
       isAnimating: false,
-      activePanels: this.options.defaultOpen!,
+      activePanels: this.options.defaultOpen,
     };
 
     this.initView();
   }
 
-  private updateView() {
+  private render() {
     const { activePanels } = this.state;
 
     for (let i = 0; i < this.headerEls.length; i++) {
@@ -129,7 +131,7 @@ class AccordionGroup {
       ) - 1;
 
     this.setActivePanels(triggerIndex);
-    this.updateView();
+    this.render();
   }
 
   private initView(): void {
@@ -139,7 +141,7 @@ class AccordionGroup {
 
     root.className = 'accordion-group';
 
-    const accordionEls: [HTMLElement, HTMLElement][] = accordions.map(
+    const accordionEls: [HTMLHeadingElement, HTMLDivElement][] = accordions.map(
       (item, i) => {
         // ======
         // Create Header element
@@ -173,8 +175,6 @@ class AccordionGroup {
           .map((attr) => `${attr.name}="${attr.value}"`)
           .join(' ');
         header.innerHTML = `<button ${headerAttrString}>${item.header}</button>`;
-
-        header.firstElementChild.addEventListener('click', this.handleClick);
 
         // ======
         // Create Panel element
@@ -212,6 +212,11 @@ class AccordionGroup {
       const [header, panel] = els;
       root.appendChild(header);
       root.appendChild(panel);
+
+      // safe to assert as HTMLButtonElement because the button was just created above
+      const trigger = header.firstElementChild as HTMLButtonElement;
+
+      trigger.addEventListener('click', this.handleClick);
     }
 
     this.headerEls = Array.from(
