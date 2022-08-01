@@ -1,4 +1,7 @@
+import animate from '../utilities/animate';
 import './AccordionGroup.scss';
+
+const ANIMATION_SPEED = 200; // milliseconds
 
 interface Accordion {
   header: string;
@@ -7,7 +10,7 @@ interface Accordion {
 
 interface AccordionGroupState {
   isAnimating: boolean;
-  activePanels: number[]; // uses index of panels
+  activePanels: number[]; // uses index of panels,
 }
 
 interface AccordionGroupOptions {
@@ -20,7 +23,13 @@ interface AccordionGroupOptions {
 
 interface Attribute {
   name: string;
-  value: string;
+  value?: string;
+}
+
+function setAttributes(el: Element, attributes: Attribute[]) {
+  for (const attr of attributes) {
+    el.setAttribute(attr.name, attr.value ?? '');
+  }
 }
 
 //TODO - Emit Custom Events
@@ -35,7 +44,9 @@ class AccordionGroup {
   private root: HTMLElement; // Root of Accordion
   private options: AccordionGroupOptions;
   private accordions: Accordion[];
-  private headerEls!: HTMLElement[];
+  private triggers: { id: number; el: HTMLElement }[] = [];
+  private panels: { id: number; el: HTMLElement }[] = [];
+  private prevActive: number[] = [];
 
   constructor(
     root: HTMLElement,
@@ -53,6 +64,7 @@ class AccordionGroup {
       defaultOpen: [0],
     };
 
+    // If supplied, blend user options with default options. Otherwise, use defaults
     if (typeof options !== undefined) {
       this.options = { ...defaultOptions, ...options };
     } else {
@@ -78,31 +90,104 @@ class AccordionGroup {
     this.initView();
   }
 
-  private render() {
+  private render(): void {
     const { activePanels } = this.state;
 
-    for (let i = 0; i < this.headerEls.length; i++) {
-      this.headerEls[i].setAttribute(
-        'aria-expanded',
-        activePanels.includes(i).toString()
-      );
+    const panelsToClose: number[] = this.getPanelsToClose(
+      activePanels,
+      this.prevActive
+    );
+    const panelsToOpen: number[] = this.getPanelsToOpen(
+      activePanels,
+      this.prevActive
+    );
+
+    console.log({ panelsToClose, panelsToOpen });
+    panelsToClose.forEach((id) => {
+      const panel = this.panels.find((panel) => panel.id === id)?.el;
+      const trigger = this.triggers.find((header) => header.id === id)?.el;
+      if (trigger) trigger.setAttribute('aria-expanded', 'false');
+      else throw new Error("Couldn't find trigger");
+
+      if (panel) {
+        this.animatePanel(panel, false).catch((error) => console.log(error));
+        panel.classList.add('accordion-group__panel--hide');
+      } else throw new Error("Couldn't find panel to close");
+    });
+    panelsToOpen.forEach((id) => {
+      const panel = this.panels.find((panel) => panel.id === id)?.el;
+      const trigger = this.triggers.find((header) => header.id === id)?.el;
+      if (trigger) trigger.setAttribute('aria-expanded', 'true');
+      else throw new Error("Couldn't find trigger");
+
+      if (panel) {
+        this.animatePanel(panel, true).catch((error) => console.log(error));
+        panel.classList.remove('accordion-group__panel--hide');
+      } else throw new Error("Couldn't find panel to open");
+    });
+  }
+
+  private async animatePanel(
+    panel: HTMLElement,
+    shouldOpen: boolean
+  ): Promise<void> {
+    const fullHeight = panel.scrollHeight;
+
+    await animate((progress) => {
+      let newHeight: number;
+      let newOpacity: number;
+      if (shouldOpen) {
+        newHeight = progress * fullHeight;
+        newOpacity = progress * 1;
+      } else {
+        newHeight = (1 - progress) * fullHeight;
+        newOpacity = (1 - progress) * 1;
+      }
+      panel.style.height = `${newHeight}px`;
+      panel.style.opacity = `${newOpacity}`;
+    }, ANIMATION_SPEED);
+    this.state.isAnimating = true;
+    if (shouldOpen) {
+      panel.style.height = 'auto';
     }
+  }
+
+  /**
+   * Returns ids (indexes) of panels to close
+   */
+  private getPanelsToClose(active: number[], prevActive: number[]): number[] {
+    // Find numbers that are in prevActive, but not activePanels
+    return prevActive.filter((panel) => {
+      return !active.includes(panel);
+    });
+  }
+
+  /**
+   * Returns ids (indexes) of panels to open
+   */
+  private getPanelsToOpen(active: number[], prevActive: number[]): number[] {
+    // Find numbers that are in activePanels, but not prevActive
+    return active.filter((panel) => {
+      return !prevActive.includes(panel);
+    });
   }
 
   private setActivePanels(panelIndex: number) {
     const { preventAllCollapsed, multipleExpanded } = this.options;
+    const { activePanels } = this.state;
+    this.prevActive = this.state.activePanels;
 
     // If id is part of activePanels...
-    if (this.state.activePanels.includes(panelIndex)) {
+    if (activePanels.includes(panelIndex)) {
       // If id is only element of activePanels...
-      if (this.state.activePanels.length === 1) {
+      if (activePanels.length === 1) {
         // Don't remove panelIndex from activePanels if preventAllCollapsed is true
         if (preventAllCollapsed) return;
         // Otherwise, remove it
         this.state.activePanels = [];
       } else {
         // If index isn't only element of activePanels, remove it
-        this.state.activePanels = this.state.activePanels.filter(
+        this.state.activePanels = activePanels.filter(
           (index) => index !== panelIndex
         );
       }
@@ -115,21 +200,10 @@ class AccordionGroup {
         this.state.activePanels = [panelIndex];
       }
     }
+    console.log(this.prevActive, this.state.activePanels);
   }
 
-  private handleClick(event: MouseEvent): void {
-    // Get id of header clicked, which corresponds with panel to potentialy open/close
-    const trigger = <HTMLButtonElement>event.currentTarget;
-    const substring = 'trigger-';
-    // Trigger elements have an id of `${groupId}__trigger-{index + 1}`
-    // If we find the number after "trigger-" and subtract 1
-    // from it, we'll have the index of the element to use
-    // in this.state.activePanels
-    const triggerIndex =
-      parseInt(
-        trigger.id.slice(trigger.id.indexOf(substring) + substring.length)
-      ) - 1;
-
+  private handleClick(triggerIndex: number): void {
     this.setActivePanels(triggerIndex);
     this.render();
   }
@@ -160,7 +234,7 @@ class AccordionGroup {
           },
           {
             name: 'class',
-            value: 'accordion-group__trigger',
+            value: `accordion-group__trigger`,
           },
           {
             name: 'aria-controls',
@@ -171,15 +245,20 @@ class AccordionGroup {
             value: triggerId,
           },
         ];
-        const headerAttrString = headerAttributes
-          .map((attr) => `${attr.name}="${attr.value}"`)
-          .join(' ');
-        header.innerHTML = `<button ${headerAttrString}>${item.header}</button>`;
+        const button = document.createElement('button');
+        setAttributes(button, headerAttributes);
+        button.textContent = item.header;
+        header.appendChild(button);
+        this.triggers.push({ id: i, el: button });
 
         // ======
         // Create Panel element
         // ======
         const panel = document.createElement('div');
+        const classNameArray = ['accordion-group__panel'];
+        if (!activePanels.includes(i))
+          classNameArray.push('accordion-group__panel--hide');
+        const className = classNameArray.join(' ');
         const panelAttributes: Attribute[] = [
           {
             name: 'id',
@@ -195,34 +274,35 @@ class AccordionGroup {
           },
           {
             name: 'class',
-            value: 'accordion-group__panel',
+            value: className,
           },
         ];
 
-        for (const attr of panelAttributes) {
-          panel.setAttribute(attr.name, attr.value);
-        }
-        panel.innerHTML = item.panel;
+        setAttributes(panel, panelAttributes);
+
+        // Create inner container for Panel
+        const innerContainer = document.createElement('div');
+        innerContainer.className = 'accordion-group__panel-inner';
+        innerContainer.innerHTML = item.panel;
+        panel.appendChild(innerContainer);
+        this.panels.push({ id: i, el: panel });
 
         return [header, panel];
       }
     );
 
-    for (const els of accordionEls) {
+    for (const [i, els] of accordionEls.entries()) {
       const [header, panel] = els;
       root.appendChild(header);
       root.appendChild(panel);
 
-      // safe to assert as HTMLButtonElement because the button was just created above
-      const trigger = header.firstElementChild as HTMLButtonElement;
-
-      trigger.addEventListener('click', this.handleClick);
+      const trigger = header.firstElementChild;
+      if (trigger instanceof HTMLButtonElement) {
+        trigger.addEventListener('click', () => this.handleClick(i));
+      } else {
+        throw new Error('Panel trigger should be a button.');
+      }
     }
-
-    this.headerEls = Array.from(
-      root.querySelectorAll('.accordion-group__trigger')
-    );
-
     return;
   }
 }
