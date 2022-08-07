@@ -1,27 +1,46 @@
+// import AccordionGroup from './components/AccordionGroup';
+import Accordion, { AccordionModelParam } from './components/Accordion';
 import AccordionGroup from './components/AccordionGroup';
 
-const accordions = [
+const accordions: AccordionModelParam[] = [
   {
-    header: 'Header 1',
+    heading: {
+      level: 'h3',
+      textContent: 'Accordion 1',
+    },
     panel: '<p>Test</p>',
+    open: false,
   },
   {
-    header: 'Header 2',
+    heading: {
+      level: 'h3',
+      textContent: 'Accordion 2',
+    },
     panel: '<p>Test 2</p>',
+    open: true,
   },
   {
-    header: 'Header 3',
+    heading: {
+      level: 'h3',
+      textContent: 'Accordion 3',
+    },
     panel: '<p>Test 3</p>',
+    open: false,
   },
 ];
 
-// const accordionGroupRoot = document.getElementById('tilly-accordion');
-const accordionGroupRoot2 = document.getElementById('tilly-accordion-2');
+// accordions.forEach(a => new Accordion(a, ))
 
-// if (!accordionGroupRoot) throw new Error('Cannot find accordion root element');
-if (!accordionGroupRoot2) throw new Error('Cannot find accordion root element');
+const accordionGroupRoot = document.getElementById('tilly-accordion');
+// const accordionGroupRoot2 = document.getElementById('tilly-accordion-2');
+
+if (!accordionGroupRoot) throw new Error('Cannot find accordion root element');
+// if (!accordionGroupRoot2) throw new Error('Cannot find accordion root element');
+
+// console.log(new Accordion(accordions[0], accordionGroupRoot));
+new AccordionGroup(accordionGroupRoot, accordions);
 
 // new AccordionGroup(accordionGroupRoot, accordions);
-new AccordionGroup(accordionGroupRoot2, accordions, {
-  multipleExpanded: true,
-});
+// new AccordionGroup(accordionGroupRoot2, accordions, {
+//   multipleExpanded: true,
+// });

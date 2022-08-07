@@ -1,0 +1,36 @@
+$padding: 16px;
+
+.accordion {
+  border: 1px solid #efefef;
+  &__button {
+    padding: var(--accordion-group-padding, #{$padding});
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+
+    &::after {
+      content: '';
+      background-image: url(../assets/caret-down.svg);
+      background-size: 100%;
+      width: 12px;
+      height: 12px;
+    }
+  }
+
+  &__panel {
+    height: auto;
+    opacity: 1;
+    overflow: hidden;
+
+    &--hide {
+      height: 0;
+      opacity: 0;
+    }
+  }
+
+  &__panel-inner {
+    padding: var(--accordion-group-padding, #{$padding});
+  }
+}
